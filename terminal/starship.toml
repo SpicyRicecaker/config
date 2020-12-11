@@ -15,13 +15,13 @@ format = '[\($state( $progress_current of $progress_total)\)]($style) '
 cherry_pick = "[🍒 PICKING](bold red)"
 
 [git_status]
-conflicted = "🏳"
-ahead = "🏎💨"
-behind = "😰"
-diverged = "😵"
-untracked = "🤷‍"
-stashed = "📦"
-modified = "📝"
-staged = '[++\($count\)](green)'
-renamed = "👅"
-deleted = "🗑"
+# conflicted = ""
+# ahead = "🍆"
+# behind = "🍑"
+# diverged = "🍉"
+# untracked = "🥥"
+# stashed = ""
+# modified = "🍌"
+# staged = '[++\($count\)](green)'
+# renamed = ""
+# deleted = ""
