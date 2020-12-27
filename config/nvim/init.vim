@@ -6,7 +6,7 @@ else
   call plug#begin("~/.config/nvim/plugged")
   Plug 'joshdick/onedark.vim'
   Plug 'itchyny/lightline.vim'
-  Plug 'plasticboy/vim-markdown'
+  Plug 'junegunn/goyo.vim'
   call plug#end()
   if (has("termguicolors"))
     set termguicolors
