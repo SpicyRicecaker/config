@@ -16,6 +16,7 @@ else
   Plug 'junegunn/goyo.vim'
   Plug 'neovim/nvim-lspconfig'
   Plug 'nvim-lua/completion-nvim'
+  Plug 'nvim-lua/lsp-status.nvim'
   call plug#end()
   ]]
   )
@@ -68,35 +69,35 @@ else
   -- Syntax highlighting of embedded stuff
   vim.g.vimsyn_embed = 'l'
 
-  local lspconfig = require'lspconfig'
+  local lspconfig = require 'lspconfig'
   local configs = require 'lspconfig/configs'
   local util = require 'lspconfig/util'
 
-  configs.rust_analyzer = {
-    default_config = {
-      cmd = {"rust-analyzer"};
-      filetypes = {"rust"};
-      root_dir = util.root_pattern("Cargo.toml", "rust-project.json");
-      settings = {
-        ["rust-analyzer"] = {
-          ["cargo"] = {
-            ["allFeatures"] = true
-          }
-        }
-      };
-    };
-    docs = {
-      package_json = "https://raw.githubusercontent.com/rust-analyzer/rust-analyzer/master/editors/code/package.json";
-      description = [[
-      https://github.com/rust-analyzer/rust-analyzer
-      rust-analyzer (aka rls 2.0), a language server for Rust
-      See [docs](https://github.com/rust-analyzer/rust-analyzer/tree/master/docs/user#settings) for extra settings.
-      ]];
-      default_config = {
-        root_dir = [[root_pattern("Cargo.toml", "rust-project.json")]];
-      };
-    };
-  };
+  -- configs.rust_analyzer = {
+    -- default_config = {
+      -- cmd = {"rust-analyzer"};
+      -- filetypes = {"rust"};
+      -- root_dir = util.root_pattern("Cargo.toml", "rust-project.json");
+      -- settings = {
+        -- ["rust-analyzer"] = {
+          -- cargo = {
+            -- allFeatures = true
+          -- }
+        -- }
+      -- };
+    -- };
+    -- docs = {
+      -- package_json = "https://raw.githubusercontent.com/rust-analyzer/rust-analyzer/master/editors/code/package.json";
+      -- description = [[
+      -- https://github.com/rust-analyzer/rust-analyzer
+      -- rust-analyzer (aka rls 2.0), a language server for Rust
+      -- See [docs](https://github.com/rust-analyzer/rust-analyzer/tree/master/docs/user#settings) for extra settings.
+      -- ]];
+      -- default_config = {
+        -- root_dir = [[root_pattern("Cargo.toml", "rust-project.json")]];
+      -- };
+    -- };
+  -- };
   -- vim:et ts=2 sw=2
   lspconfig.rust_analyzer.setup{}
 
@@ -136,6 +137,8 @@ else
   vim.o.hidden = true
   -- Basically VSCode save after delay
   vim.cmd('set updatetime=300')
+
+  vim.cmd('autocmd CursorHold * lua vim.lsp.diagnostic.show_line_diagnostics()')
   -- Put the errors on the signcolumn so the entire file view isn't indented
   vim.cmd('set signcolumn=number')
 
@@ -160,4 +163,7 @@ else
   vim.api.nvim_buf_set_keymap(0, 'n', 'gd', '<cmd>lua vim.lsp.buf.declaration()<CR>', {noremap = true})
 
   vim.api.nvim_buf_set_option(0, 'omnifunc', 'v:lua.vim.lsp.omnifunc')
+
+  vim.cmd('set guifont=Fira_Code:h21')
+  vim.cmd('let g:neovide_fullscreen=v:true')
 end
