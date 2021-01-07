@@ -21,6 +21,7 @@ else
   Plug 'neovim/nvim-lspconfig'
   Plug 'nvim-lua/completion-nvim'
   Plug 'nvim-lua/lsp-status.nvim'
+  Plug 'nvim-treesitter/nvim-treesitter', {'do': ':TSUpdate'}
   call plug#end()
   ]]
   )
@@ -277,4 +278,13 @@ else
   vim.api.nvim_buf_set_keymap(0, 'n', 'gd', '<cmd>lua vim.lsp.buf.declaration()<CR>', {noremap = true})
   -- Autocomplete w/ Ctrl-x Ctrl-o
   vim.api.nvim_buf_set_option(0, 'omnifunc', 'v:lua.vim.lsp.omnifunc')
+
+  -- <==TREESITTER (SYNTAX HIGHLIGHTING)==>
+  require'nvim-treesitter.configs'.setup {
+    ensure_installed = "maintained", -- one of "all", "maintained" (parsers with maintainers), or a list of languages
+    highlight = {
+      enable = true,              -- false will disable the whole extension
+      -- disable = { "c", "rust" },  -- list of language that will be disabled
+    },
+  }
 end
