@@ -1,5 +1,5 @@
 -- Bind vim clipboard to system clipboard
-vim.cmd('set clipboard+=unnamedplus')
+vim.o.clipboard = 'unnamedplus'
 
 -- If we're using the VSCode Extension
 if vim.g.vscode == 1 then
@@ -7,24 +7,31 @@ if vim.g.vscode == 1 then
   vim.api.nvim_set_keymap('n', 'j', 'gj', {silent = true})
   vim.api.nvim_set_keymap('n', 'k', 'gk', {silent = true})
 else
+  require'plugins'
+  -- <==ALIASES==>
+  --
+  local cmd = vim.cmd
+  -- local fn = vim.fn
+  local g = vim.g
+
+  -- <==UTIL==>
+  --
+  -- Need to use this workaround to set options until simpler option interface is made in master
+  -- You need to set the global variable, as well as either window or buffer variable to make sure everything works
+  -- Look in nvim help options to check the scope of each option
+  local scopes = {b = {vim.o, vim.bo}, w = {vim.o, vim.wo}}
+
+  -- Scope, key, value
+  local function opt (s, k, v)
+    for _, scope in pairs(scopes[s]) do
+      scope[k]=v
+    end
+  end
 
   -- <==PLUGINS==>
-  -- 
-  -- Call vim plug to init extensions 
+  --
+  -- Call vim plug to init extensions
   -- TODO figure out some better way to put vim-plug in init.lua
-  vim.cmd(
-  [[
-  call plug#begin("~/.config/nvim/plugged")
-  Plug 'joshdick/onedark.vim'
-  Plug 'itchyny/lightline.vim'
-  Plug 'junegunn/goyo.vim'
-  Plug 'neovim/nvim-lspconfig'
-  Plug 'nvim-lua/completion-nvim'
-  Plug 'nvim-lua/lsp-status.nvim'
-  Plug 'nvim-treesitter/nvim-treesitter', {'do': ':TSUpdate'}
-  call plug#end()
-  ]]
-  )
 
   -- <==COLOR SCHEME==> && <==Onedark Config==>
   --
@@ -33,33 +40,35 @@ else
     vim.o.termguicolors = true
   end
   -- Set the status bar to Onedark
-  vim.g.lightline = {colorscheme = 'onedark'}
+  g.lightline = {colorscheme = 'onedark'}
   -- Hide squiggly lines at the end of file
-  vim.g.onedark_hide_endofbuffer = 1
+  g.onedark_hide_endofbuffer = 1
   -- Enable italic font
-  vim.g.onedark_terminal_italics = 1
+  g.onedark_terminal_italics = 1
   -- Enable syntax highlighting in nvim
-  vim.cmd('syntax on')
+  cmd'syntax on'
   -- Set colorscheme to onedark
-  vim.cmd('autocmd vimenter * ++nested colorscheme onedark')
+  cmd'autocmd vimenter * ++nested colorscheme onedark'
   -- Syntax highlighting of embedded code
-  vim.g.vimsyn_embed = 'l'
+  g.vimsyn_embed = 'l'
 
   -- <==MECHANICS==>
   --
-  -- Set tabs to spaces, tabs two spaces wide
-  vim.cmd('set expandtab')
-  vim.cmd('set shiftwidth=2')
-  vim.cmd('set softtabstop=2')
-  -- Setting these tab configs directly in init.lua doesn't work for some reason
-  -- vim.o.expandtab = true
-  -- vim.o.shiftwidth = 2
-  -- vim.o.softtabstop = 2
+  -- Tab options
   --
+  -- Set tabs to spaces, tabs two spaces wide
+  local indent = 2
+  opt('b', 'expandtab', true)                           -- Use spaces instead of tabs
+  opt('b', 'shiftwidth', indent)                        -- Size of an indent
+  opt('b', 'smartindent', true)                         -- Insert indents automatically
+  opt('b', 'tabstop', indent)
   -- Tabbing mid space keeps indentation
   vim.o.smarttab = true
   -- Copy level of indendation from previous line
   vim.o.autoindent = true
+
+  -- Search options
+
   -- Search incrementally, live results as we type
   vim.o.incsearch = true
   -- Ignorecase in search unless we put in cases
@@ -67,16 +76,44 @@ else
   vim.o.smartcase = true
   -- Highligh search results
   vim.o.hlsearch = true
+
+  -- Text
+
   -- Enable wrapping and breaking of indent
   vim.o.wrap = true
   vim.o.breakindent = true
+
+  -- Gutter
+
+  -- Relative line numbers
+  opt('w', 'rnu', true)
+  -- But show current line number
+  opt('w', 'number', true)
+  -- Have errors show on the number column
+  opt('w', 'scl', 'number')
+
+  -- Misc
+
+  -- Using join space J inserts no double spaces after a dot
+  vim.o.joinspaces = false
   -- Make it so we can easily traverse word wrappings
   vim.api.nvim_set_keymap('n', 'j', 'gj', { noremap = true, silent = true })
   vim.api.nvim_set_keymap('n', 'k', 'gk', { noremap = true, silent = true })
   -- JK for escape
   vim.api.nvim_set_keymap('i', 'jk', '<Esc>', {})
-  -- Save on edit (very buggy, use with caution especially with LSPs)
-  -- vim.cmd('autocmd TextChanged,TextChangedI <buffer> silent write')
+  -- Neovim nightly feature to briefly show highlight on yank
+  cmd 'au TextYankPost * lua vim.highlight.on_yank {on_visual = false}'
+
+  -- Language Server QOL Changes
+
+  -- Allow modified buffers? idk
+  vim.o.hidden = true
+  -- Update time (ms) used for time before cursor hold event is triggered and swap is saved to disk
+  vim.o.ut = 300
+  -- Show diagnostics on mouse hold
+  -- Also AUTOWRITE file!!! so I don't break my pinkie spamming :wq everytime I want to see rust-analyzer diagnostics thanks
+  cmd'autocmd TextChanged,TextChangedI <buffer> silent write'
+  cmd'autocmd CursorHold * lua vim.lsp.diagnostic.show_line_diagnostics()'
 
   -- <==LANGUAGE SERVER PROTOCOL CONFIGURATION==>
   local lspconfig = require 'lspconfig'
@@ -246,23 +283,113 @@ else
   -- vim:et ts=2 sw=2
   lspconfig.texlab.setup{}
 
-  -- Relative line numbers
-  vim.cmd('set rnu')
-
-  -- Hides buffers? idk
-  vim.o.hidden = true
-  -- After cursor doesn't move for .3 seconds pop def
-  vim.cmd('set updatetime=300')
-  vim.cmd('autocmd CursorHold * lua vim.lsp.diagnostic.show_line_diagnostics()')
-  -- Put the errors on the signcolumn so the entire file view isn't indented
-  vim.cmd('set signcolumn=number')
+  -- <==LUA==>
+  local name = "sumneko_lua"
+  configs[name] = {
+    default_config = {
+      filetypes = {'lua'};
+      root_dir = function(fname)
+        return util.find_git_ancestor(fname) or util.path.dirname(fname)
+      end;
+      log_level = vim.lsp.protocol.MessageType.Warning;
+    };
+    docs = {
+      package_json = "https://raw.githubusercontent.com/sumneko/vscode-lua/master/package.json";
+      description = [[
+      https://github.com/sumneko/lua-language-server
+      Lua language server.
+      `lua-language-server` can be installed by following the instructions [here](https://github.com/sumneko/lua-language-server/wiki/Build-and-Run-(Standalone)).
+      **By default, lua-language-server doesn't have a `cmd` set.** This is because nvim-lspconfig does not make assumptions about your path. You must add the following to your init.vim or init.lua to set `cmd` to the absolute path ($HOME and ~ are not expanded) of you unzipped and compiled lua-language-server.
+      ```lua
+      local system_name
+      if vim.fn.has("mac") == 1 then
+        system_name = "macOS"
+      elseif vim.fn.has("unix") == 1 then
+        system_name = "Linux"
+      elseif vim.fn.has('win32') == 1 then
+        system_name = "Windows"
+      else
+        print("Unsupported system for sumneko")
+      end
+      -- set the path to the sumneko installation; if you previously installed via the now deprecated :LspInstall, use
+      local sumneko_root_path = vim.fn.stdpath('cache')..'/lspconfig/sumneko_lua/lua-language-server'
+      local sumneko_binary = sumneko_root_path.."/bin/"..system_name.."/lua-language-server"
+      require'lspconfig'.sumneko_lua.setup {
+        cmd = {sumneko_binary, "-E", sumneko_root_path .. "/main.lua"};
+        settings = {
+          Lua = {
+            runtime = {
+              -- Tell the language server which version of Lua you're using (most likely LuaJIT in the case of Neovim)
+              version = 'LuaJIT',
+              -- Setup your lua path
+              path = vim.split(package.path, ';'),
+            },
+            diagnostics = {
+              -- Get the language server to recognize the `vim` global
+              globals = {'vim'},
+            },
+            workspace = {
+              -- Make the server aware of Neovim runtime files
+              library = {
+                [vim.fn.expand('$VIMRUNTIME/lua')] = true,
+                [vim.fn.expand('$VIMRUNTIME/lua/vim/lsp')] = true,
+              },
+            },
+          },
+        },
+      }
+      ```
+      ]];
+      default_config = {
+        root_dir = [[root_pattern(".git") or bufdir]];
+      };
+    };
+  }
+  local system_name
+  if vim.fn.has("mac") == 1 then
+    system_name = "macOS"
+  elseif vim.fn.has("unix") == 1 then
+    system_name = "Linux"
+  elseif vim.fn.has('win32') == 1 then
+    system_name = "Windows"
+  else
+    print("Unsupported system for sumneko")
+  end
+  -- set the path to the sumneko installation; if you previously installed via the now deprecated :LspInstall, use
+  local sumneko_root_path = '/home/spicy/build/lua-language-server'
+  local sumneko_binary = sumneko_root_path.."/bin/"..system_name.."/lua-language-server"
+  lspconfig.sumneko_lua.setup {
+    cmd = {sumneko_binary, "-E", sumneko_root_path .. "/main.lua"};
+    settings = {
+      Lua = {
+        runtime = {
+          -- Tell the language server which version of Lua you're using (most likely LuaJIT in the case of Neovim)
+          version = 'LuaJIT',
+          -- Setup your lua path
+          path = vim.split(package.path, ';'),
+        },
+        diagnostics = {
+          -- Get the language server to recognize the `vim` global
+          globals = {'vim'},
+        },
+        workspace = {
+          -- Make the server aware of Neovim runtime files
+          library = {
+            [vim.fn.expand('$VIMRUNTIME/lua')] = true,
+            [vim.fn.expand('$VIMRUNTIME/lua/vim/lsp')] = true,
+          },
+        },
+      },
+    },
+  }
+  -- vim:et ts=2
 
   -- <==LSP KEYBINDS==>
   -- c-] to view definition
   vim.api.nvim_buf_set_keymap(0, 'n', '<c-]>', '<cmd>lua vim.lsp.buf.definition()<CR>', {noremap = true})
   -- K to 'hover'
   vim.api.nvim_buf_set_keymap(0, 'n', 'K', '<cmd>lua vim.lsp.buf.hover()<CR>', {noremap = true})
-  -- gD to check the implementation 
+  -- gD to check the implementation
   vim.api.nvim_buf_set_keymap(0, 'n', 'gD', '<cmd>lua vim.lsp.buf.implementation()<CR>', {noremap = true})
   -- c-k to help signature
   vim.api.nvim_buf_set_keymap(0, 'n', '<c-k>', '<cmd>lua vim.lsp.buf.signature_help()<CR>', {noremap = true})
